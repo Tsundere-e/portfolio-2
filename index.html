@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Developer</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Pastel Beige (#FAF5F0), Pastel Pink (#FFD1DC), Pastel Purple (#E0BBE4), Deep Purple/Grey for text (#3A3042) -->
+    <!-- Application Structure Plan: Professional SPA with a CSS-driven 8-bit aesthetic (sharp borders, offset shadows) but modern typography for readability. The hero section features a dynamic transition: a video player that, upon completion or manual skip, is replaced by a project gallery grid. The application includes a dynamic radar chart for skills and a fully functional Firebase guestbook hidden behind an admin UI prompt. -->
+    <!-- Visualization & Content Choices: Radar Chart (Chart.js) to display technical stack proficiency. CSS Grid for the dynamic portfolio gallery. Vanilla JS DOM manipulation for the video-to-gallery transition to ensure a dynamic, non-static experience without page reloads. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #FAF5F0; 
+            color: #3A3042; 
+        }
+        
+        body.lang-pt .only-en { display: none !important; }
+        body.lang-en .only-pt { display: none !important; }
+        
+        .pixel-box {
+            background-color: #ffffff;
+            border: 4px solid #E0BBE4;
+            box-shadow: 8px 8px 0px #FFD1DC;
+            border-radius: 0;
+            transition: all 0.3s ease;
+        }
+
+        .pixel-box-alt {
+            background-color: #ffffff;
+            border: 4px solid #FFD1DC;
+            box-shadow: 8px 8px 0px #E0BBE4;
+            border-radius: 0;
+        }
+        
+        .pixel-btn {
+            background-color: #FAF5F0;
+            border: 3px solid #E0BBE4;
+            box-shadow: 4px 4px 0px #FFD1DC;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        
+        .pixel-btn:active {
+            box-shadow: 0px 0px 0px #FFD1DC;
+            transform: translate(4px, 4px);
+        }
+
+        .pixel-input {
+            border: 3px solid #E0BBE4;
+            background-color: #ffffff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .pixel-input:focus {
+            border-color: #3A3042;
+            box-shadow: inset 4px 4px 0px #FAF5F0;
+        }
+        
+        .chart-container {
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 350px; 
+            max-height: 400px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #FAF5F0; border-left: 2px solid #E0BBE4; }
+        ::-webkit-scrollbar-thumb { background: #E0BBE4; }
+    </style>
+</head>
+<body class="lang-pt min-h-screen pb-20 selection:bg-[#E0BBE4] selection:text-white">
+
+    <nav class="p-6 flex flex-wrap justify-between items-center gap-4 max-w-7xl mx-auto">
+        <div class="text-xl md:text-2xl font-bold bg-white px-4 py-2 pixel-box inline-block tracking-tight">
+            Dev.Portfolio
+        </div>
+        <div class="flex gap-4">
+            <button id="lang-toggle" class="pixel-btn px-5 py-2 text-sm uppercase tracking-wider">
+                EN / PT
+            </button>
+            <button id="admin-login-btn" class="pixel-btn px-5 py-2 text-sm uppercase tracking-wider bg-[#E0BBE4] text-white border-[#3A3042] shadow-[#3A3042]">
+                <span class="only-pt">Acesso Admin</span><span class="only-en">Admin Access</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="w-full max-w-7xl mx-auto p-4 mb-16">
+        
+        <div id="video-section" class="w-full transition-all duration-500">
+            <div class="pixel-box-alt w-full h-[75vh] flex flex-col relative bg-[#ffffff]">
+                <div class="w-full bg-[#E0BBE4] text-[#3A3042] p-3 text-sm font-semibold flex justify-between items-center border-b-4 border-[#FFD1DC]">
+                    <span class="uppercase tracking-widest">
+                        <span class="only-pt">Apresentação_Profissional.mp4</span>
+                        <span class="only-en">Professional_Presentation.mp4</span>
+                    </span>
+                    <button id="skip-video-btn" class="bg-white px-3 py-1 text-xs border-2 border-[#3A3042] hover:bg-[#FAF5F0] transition-colors">
+                        <span class="only-pt">PULAR E VER PROJETOS ➔</span><span class="only-en">SKIP TO PROJECTS ➔</span>
+                    </button>
+                </div>
+                <div class="flex-grow relative bg-[#FAF5F0] flex items-center justify-center p-4">
+                    <video id="main-video" class="w-full h-full object-cover border-4 border-[#3A3042]" controls>
+                        <source src="" type="video/mp4">
+                        <div class="text-center p-8 bg-white border-4 border-[#E0BBE4]">
+                            <p class="mb-4 font-bold text-lg"><span class="only-pt">Vídeo não carregado.</span><span class="only-en">Video not loaded.</span></p>
+                            <p class="text-sm"><span class="only-pt">Por favor, insira a URL do seu vídeo na tag &lt;source src="..."&gt; no código HTML.</span><span class="only-en">Please insert your video URL in the &lt;source src="..."&gt; tag in the HTML code.</span></p>
+                            <button id="fallback-skip-btn" class="mt-6 pixel-btn px-4 py-2"><span class="only-pt">Ir para Projetos</span><span class="only-en">Go to Projects</span></button>
+                        </div>
+                    </video>
+                </div>
+            </div>
+        </div>
+
+        <div id="gallery-section" class="w-full hidden fade-in">
+            <div class="flex justify-between items-end mb-8 border-b-4 border-[#E0BBE4] pb-4">
+                <h2 class="text-3xl font-bold text-[#3A3042]">
+                    <span class="only-pt">Projetos Recentes</span><span class="only-en">Recent Projects</span>
+                </h2>
+                <button id="back-to-video-btn" class="text-sm font-semibold underline text-[#E0BBE4] hover:text-[#3A3042]">
+                    <span class="only-pt">Voltar ao Vídeo</span><span class="only-en">Back to Video</span>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="pixel-box p-4 flex flex-col group hover:-translate-y-2 transition-transform">
+                    <div class="w-full h-48 bg-[#FFD1DC] border-2 border-[#3A3042] mb-4 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-[#3A3042] font-bold"></span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">E-Commerce Platform</h3>
+                    <p class="text-sm text-gray-600 mb-4 flex-grow"><span class="only-pt">Plataforma desenvolvida com Next.js e integrações de pagamento.</span><span class="only-en">Platform developed with Next.js and payment integrations.</span></p>
+                    <div class="flex gap-2">
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">Next.js</span>
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">TypeScript</span>
+                    </div>
+                </div>
+
+                <div class="pixel-box p-4 flex flex-col group hover:-translate-y-2 transition-transform">
+                    <div class="w-full h-48 bg-[#E0BBE4] border-2 border-[#3A3042] mb-4 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-[#3A3042] font-bold"></span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Data Dashboard</h3>
+                    <p class="text-sm text-gray-600 mb-4 flex-grow"><span class="only-pt">Painel analítico corporativo construído com Astro e Chart.js.</span><span class="only-en">Corporate analytical dashboard built with Astro and Chart.js.</span></p>
+                    <div class="flex gap-2">
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">Astro</span>
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">JavaScript</span>
+                    </div>
+                </div>
+
+                <div class="pixel-box p-4 flex flex-col group hover:-translate-y-2 transition-transform">
+                    <div class="w-full h-48 bg-[#FAF5F0] border-2 border-[#3A3042] mb-4 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-[#3A3042] font-bold"></span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Internal API Service</h3>
+                    <p class="text-sm text-gray-600 mb-4 flex-grow"><span class="only-pt">Microsserviço de alta performance para processamento de dados.</span><span class="only-en">High-performance microservice for data processing.</span></p>
+                    <div class="flex gap-2">
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">Java</span>
+                        <span class="text-xs bg-[#FAF5F0] border border-[#E0BBE4] px-2 py-1">Ruby</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
+        <div class="flex flex-col justify-center">
+            <h2 class="text-2xl font-bold mb-6 text-[#3A3042] uppercase tracking-wide border-b-4 border-[#FFD1DC] pb-2 inline-block self-start">
+                <span class="only-pt">Sobre o Desenvolvedor</span><span class="only-en">About the Developer</span>
+            </h2>
+            <div class="pixel-box p-8 text-lg leading-relaxed text-gray-700 space-y-6">
+                <p>
+                    <span class="only-pt">Sou um profissional focado em engenharia de software e arquitetura de soluções. Minha abordagem combina uma base sólida em linguagens backend clássicas com a agilidade dos frameworks frontend modernos.</span>
+                    <span class="only-en">I am a professional focused on software engineering and solutions architecture. My approach combines a solid foundation in classic backend languages with the agility of modern frontend frameworks.</span>
+                </p>
+                <p>
+                    <span class="only-pt">Acredito que o código limpo e a experiência do usuário devem andar lado a lado. Meu objetivo ao construir este espaço foi demonstrar técnica organizacional através de uma estética nostálgica, porém com código estritamente moderno e sem dependências desnecessárias.</span>
+                    <span class="only-en">I believe clean code and user experience must go hand in hand. My goal in building this space was to demonstrate organizational technique through a nostalgic aesthetic, yet strictly utilizing modern code without unnecessary dependencies.</span>
+                </p>
+            </div>
+        </div>
+        
+        <div class="pixel-box-alt p-8 flex flex-col items-center justify-center bg-white">
+            <h2 class="text-xl font-bold mb-4 text-[#3A3042] text-center">
+                <span class="only-pt">Matriz de Competências</span><span class="only-en">Skills Matrix</span>
+            </h2>
+            <div class="chart-container w-full">
+                <canvas id="skillsChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-4xl mx-auto p-4 mb-20">
+        <div class="pixel-box p-8 md:p-12 bg-white">
+            <h2 class="text-2xl font-bold mb-8 text-center text-[#3A3042]">
+                <span class="only-pt">Contato Profissional</span><span class="only-en">Professional Contact</span>
+            </h2>
+            <form id="contact-form" class="flex flex-col gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                            <span class="only-pt">Nome / Empresa</span><span class="only-en">Name / Company</span>
+                        </label>
+                        <input type="text" id="msg-name" required class="pixel-input p-4 text-lg" placeholder="John Doe - Tech Corp">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                            <span class="only-pt">E-mail para Retorno</span><span class="only-en">Return Email</span>
+                        </label>
+                        <input type="email" id="msg-email" required class="pixel-input p-4 text-lg" placeholder="john@example.com">
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                        <span class="only-pt">Mensagem / Proposta</span><span class="only-en">Message / Proposal</span>
+                    </label>
+                    <textarea id="msg-text" required rows="5" class="pixel-input p-4 text-lg resize-y" placeholder="..."></textarea>
+                </div>
+                
+                <button type="submit" class="pixel-btn bg-[#FFD1DC] text-[#3A3042] p-4 text-lg uppercase tracking-widest mt-2 hover:bg-[#E0BBE4] hover:text-white">
+                    <span class="only-pt">Enviar Mensagem</span><span class="only-en">Send Message</span>
+                </button>
+            </form>
+            <div id="form-status" class="mt-6 text-sm font-bold text-center p-4 bg-[#FAF5F0] border-2 border-[#E0BBE4] text-[#3A3042] hidden"></div>
+        </div>
+    </section>
+
+    <section id="admin-panel" class="max-w-5xl mx-auto p-4 hidden mb-20 fade-in">
+        <div class="pixel-box-alt p-8 bg-[#3A3042] text-white border-[#3A3042]">
+            <div class="flex justify-between items-center mb-6 border-b-2 border-[#E0BBE4] pb-4">
+                <h2 class="text-2xl font-bold text-[#FFD1DC]">Painel de Controle Interno</h2>
+                <button id="close-admin-btn" class="pixel-btn bg-white text-[#3A3042] px-4 py-2 text-sm border-none shadow-none">
+                    <span class="only-pt">Fechar Painel</span><span class="only-en">Close Panel</span>
+                </button>
+            </div>
+            
+            <div id="messages-container" class="bg-white text-[#3A3042] p-6 h-[500px] overflow-y-auto flex flex-col gap-4 border-4 border-[#E0BBE4]">
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center text-sm text-gray-500 mt-12 mb-8 border-t-2 border-[#E0BBE4] pt-8 max-w-7xl mx-auto">
+        <span class="only-pt">Desenvolvido com arquitetura limpa.</span>
+        <span class="only-en">Developed with clean architecture.</span>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfigObj = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'portfolio-app';
+
+        let fireApp, fireAuth, fireDb, currentUser;
+
+        if (firebaseConfigObj) {
+            fireApp = initializeApp(firebaseConfigObj);
+            fireAuth = getAuth(fireApp);
+            fireDb = getFirestore(fireApp);
+
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(fireAuth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(fireAuth);
+                    }
+                } catch (error) {
+                    console.error("Auth init error:", error);
+                }
+            };
+            initAuth();
+
+            onAuthStateChanged(fireAuth, (user) => {
+                currentUser = user;
+                if (currentUser && adminModeActive) {
+                    fetchRealtimeMessages();
+                }
+            });
+        }
+
+        const videoContainer = document.getElementById('video-section');
+        const galleryContainer = document.getElementById('gallery-section');
+        const presentationVideo = document.getElementById('main-video');
+        const skipBtn = document.getElementById('skip-video-btn');
+        const fallbackSkipBtn = document.getElementById('fallback-skip-btn');
+        const backToVideoBtn = document.getElementById('back-to-video-btn');
+
+        const displayGallery = () => {
+            presentationVideo.pause();
+            videoContainer.style.display = 'none';
+            galleryContainer.style.display = 'block';
+            galleryContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const displayVideo = () => {
+            galleryContainer.style.display = 'none';
+            videoContainer.style.display = 'block';
+            videoContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        presentationVideo.addEventListener('ended', displayGallery);
+        skipBtn.addEventListener('click', displayGallery);
+        if(fallbackSkipBtn) fallbackSkipBtn.addEventListener('click', displayGallery);
+        backToVideoBtn.addEventListener('click', displayVideo);
+
+        const formElement = document.getElementById('contact-form');
+        const statusBox = document.getElementById('form-status');
+
+        formElement.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const nameVal = document.getElementById('msg-name').value;
+            const emailVal = document.getElementById('msg-email').value;
+            const textVal = document.getElementById('msg-text').value;
+            const submitBtn = formElement.querySelector('button');
+            const isPt = document.body.classList.contains('lang-pt');
+            
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+            submitBtn.innerText = isPt ? 'Enviando...' : 'Sending...';
+
+            if (!currentUser || !fireDb) {
+                statusBox.classList.remove('hidden');
+                statusBox.innerText = isPt ? "Modo de visualização. Banco de dados offline." : "Preview mode. Database offline.";
+                setTimeout(() => {
+                    statusBox.classList.add('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.innerText = isPt ? 'Enviar Mensagem' : 'Send Message';
+                }, 4000);
+                return;
+            }
+            
+            try {
+                const collectionRef = collection(fireDb, 'artifacts', currentAppId, 'public', 'data', 'messages');
+                await addDoc(collectionRef, {
+                    name: nameVal,
+                    email: emailVal,
+                    text: textVal,
+                    timestamp: Date.now(),
+                    userId: currentUser.uid
+                });
+                
+                formElement.reset();
+                statusBox.classList.remove('hidden');
+                statusBox.innerText = isPt ? "Mensagem enviada com sucesso!" : "Message sent successfully!";
+            } catch(error) {
+                statusBox.classList.remove('hidden');
+                statusBox.innerText = isPt ? "Erro de conexão ao enviar." : "Connection error while sending.";
+                console.error(error);
+            }
+
+            setTimeout(() => {
+                statusBox.classList.add('hidden');
+            }, 5000);
+            
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.innerText = isPt ? 'Enviar Mensagem' : 'Send Message';
+        });
+
+        let adminModeActive = false;
+        let dbUnsubscribe = null;
+        const msgListContainer = document.getElementById('messages-container');
+        const adminSection = document.getElementById('admin-panel');
+
+        const fetchRealtimeMessages = () => {
+            if (!fireDb || !currentUser) return;
+            
+            const collectionRef = collection(fireDb, 'artifacts', currentAppId, 'public', 'data', 'messages');
+            
+            dbUnsubscribe = onSnapshot(collectionRef, (snapshot) => {
+                const allMessages = [];
+                snapshot.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() }));
+                allMessages.sort((a, b) => b.timestamp - a.timestamp);
+                
+                msgListContainer.innerHTML = '';
+                
+                if(allMessages.length === 0) {
+                    msgListContainer.innerHTML = '<div class="text-center text-gray-500 mt-10">Nenhuma mensagem recebida ainda.</div>';
+                    return;
+                }
+                
+                allMessages.forEach(msg => {
+                    const dateObj = new Date(msg.timestamp);
+                    const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString();
+                    
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'border-l-4 border-[#FFD1DC] pl-4 py-3 bg-[#FAF5F0]';
+                    msgDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2 border-b border-[#E0BBE4] pb-2">
+                            <span class="font-bold text-lg">${msg.name}</span>
+                            <span class="text-sm text-gray-500">${dateStr}</span>
+                        </div>
+                        <div class="text-sm font-semibold text-[#E0BBE4] mb-2">${msg.email || 'N/A'}</div>
+                        <div class="whitespace-pre-wrap text-gray-800">${msg.text}</div>
+                    `;
+                    msgListContainer.appendChild(msgDiv);
+                });
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                msgListContainer.innerHTML = '<div class="text-red-500 p-4">Erro ao carregar mensagens.</div>';
+            });
+        };
+
+        document.getElementById('admin-login-btn').addEventListener('click', () => {
+            const isPt = document.body.classList.contains('lang-pt');
+            
+            if (adminModeActive) {
+                adminSection.classList.add('hidden');
+                adminModeActive = false;
+                if (dbUnsubscribe) {
+                    dbUnsubscribe();
+                    dbUnsubscribe = null;
+                }
+                return;
+            }
+
+            const passwordInput = prompt(isPt ? "Insira a credencial de acesso:" : "Enter access credential:");
+            
+            if (passwordInput === 'admin') {
+                adminModeActive = true;
+                adminSection.classList.remove('hidden');
+                adminSection.scrollIntoView({ behavior: 'smooth' });
+                if (currentUser) {
+                    fetchRealtimeMessages();
+                } else {
+                    msgListContainer.innerHTML = '<div class="text-center p-4">Aguardando autenticação do banco de dados...</div>';
+                }
+            } else if (passwordInput !== null) {
+                alert(isPt ? "Credencial inválida." : "Invalid credential.");
+            }
+        });
+
+        document.getElementById('close-admin-btn').addEventListener('click', () => {
+            adminSection.classList.add('hidden');
+            adminModeActive = false;
+            if (dbUnsubscribe) {
+                dbUnsubscribe();
+                dbUnsubscribe = null;
+            }
+        });
+
+        const langToggleBtn = document.getElementById('lang-toggle');
+        langToggleBtn.addEventListener('click', () => {
+            const isPt = document.body.classList.contains('lang-pt');
+            if(isPt) {
+                document.body.classList.replace('lang-pt', 'lang-en');
+            } else {
+                document.body.classList.replace('lang-en', 'lang-pt');
+            }
+            drawRadarChart(); 
+        });
+
+        let radarChartInstance = null;
+        
+        const drawRadarChart = () => {
+            const canvasContext = document.getElementById('skillsChart').getContext('2d');
+            const isPt = document.body.classList.contains('lang-pt');
+            
+            if(radarChartInstance) radarChartInstance.destroy();
+            
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#3A3042';
+
+            radarChartInstance = new Chart(canvasContext, {
+                type: 'radar',
+                data: {
+                    labels: ['TypeScript', 'Java', 'Ruby', 'Julia', 'Next.js', 'Astro'],
+                    datasets: [{
+                        label: isPt ? 'Nível de Domínio' : 'Proficiency Level',
+                        data: [90, 75, 70, 65, 85, 80],
+                        backgroundColor: 'rgba(224, 187, 228, 0.4)',
+                        borderColor: '#E0BBE4',
+                        pointBackgroundColor: '#FFD1DC',
+                        pointBorderColor: '#3A3042',
+                        borderWidth: 3,
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(58, 48, 66, 0.1)' },
+                            grid: { color: 'rgba(58, 48, 66, 0.1)', circular: false },
+                            pointLabels: { font: { size: 12, weight: '600' }, color: '#3A3042' },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#3A3042', titleFont: { size: 14 }, bodyFont: { size: 14 }, cornerRadius: 0 }
+                    }
+                }
+            });
+        };
+
+        window.onload = () => {
+            drawRadarChart();
+        };
+    </script>
+</body>
+</html>
